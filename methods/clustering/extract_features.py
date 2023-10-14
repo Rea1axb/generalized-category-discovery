@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-import timm
+# import timm
 from torchvision import transforms
 import torchvision
 

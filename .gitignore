@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+*.npy
+pretrained_models
+.vscode
+extracted_features_wo_finetune
+*.ipynb
