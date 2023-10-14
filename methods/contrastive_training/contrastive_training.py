@@ -327,7 +327,7 @@ def test_kmeans(model, test_loader,
     # -----------------------
     all_acc, old_acc, new_acc = log_accs_from_preds(y_true=targets, y_pred=preds, mask=mask,
                                                     T=epoch, eval_funcs=args.eval_funcs, save_name=save_name,
-                                                    writer=args.writer)
+                                                    writer=args.writer, print_output=True)
 
     return all_acc, old_acc, new_acc
 

@@ -4,3 +4,5 @@ extracted_features_wo_finetune
 extracted_features
 .vscode
 __pycache__
+metric_learn_gcd
+*.npy

@@ -6,3 +6,6 @@ nvidia-smi
 export CUDA_VISIBLE_DEVICES=3
 
 python -m methods.clustering.extract_features --dataset cifar100
+
+# python -m methods.clustering.extract_features --dataset cifar100 --use_best_model 'True' \
+#  --warmup_model_dir '/work/sagar/osr_novel_categories/metric_learn_gcd/log/(28.04.2022_|_27.530)/checkpoints/model.pt'
