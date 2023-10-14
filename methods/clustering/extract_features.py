@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-import timm
+# import timm
 from torchvision import transforms
 import torchvision
 
@@ -16,6 +16,8 @@ from data.imagenet import get_imagenet_100_datasets
 from data.data_utils import MergedDataset
 from data.cub import CustomCub2011, cub_root
 from data.fgvc_aircraft import FGVCAircraft, aircraft_root
+
+from models import vision_transformer as vits
 
 from project_utils.general_utils import strip_state_dict, str2bool
 from copy import deepcopy
@@ -102,7 +104,8 @@ if __name__ == "__main__":
         args.crop_pct = 0.875
         pretrain_path = dino_pretrain_path
 
-        model = torch.hub.load('facebookresearch/dino:main', 'dino_vitb16', pretrained=False)
+        # model = torch.hub.load('facebookresearch/dino:main', 'dino_vitb16', pretrained=False)
+        model = vits.__dict__['vit_base']()
 
         state_dict = torch.load(pretrain_path, map_location='cpu')
         model.load_state_dict(state_dict)

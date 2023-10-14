@@ -12,6 +12,7 @@ from project_utils.cluster_and_log_utils import log_accs_from_preds
 from methods.clustering.feature_vector_dataset import FeatureVectorDataset
 from data.get_datasets import get_datasets, get_class_splits
 from methods.clustering.faster_mix_k_means_pytorch import K_Means as SemiSupKMeans
+from methods.clustering.faster_mix_k_means_pytorch import pairwise_distance
 
 from tqdm import tqdm
 from config import feature_extract_dir
@@ -91,6 +92,42 @@ def test_kmeans_semi_sup(merge_test_loader, args, K=None):
 
     return all_acc, old_acc, new_acc, kmeans
 
+def test_kmeans(test_loader, centers, args):
+    all_feats = []
+    targets = np.array([])
+    mask_cls = np.array([])     # From all the data, which instances belong to Old classes
+
+    print('Collating features...')
+    # First extract all features
+    for batch_idx, (feats, label, _) in enumerate(tqdm(test_loader)):
+
+        feats = feats.to(device)
+
+        feats = torch.nn.functional.normalize(feats, dim=-1)
+
+        all_feats.append(feats.cpu().numpy())
+        targets = np.append(targets, label.cpu().numpy())
+        mask_cls = np.append(mask_cls, np.array([True if x.item() in range(len(args.train_classes))
+                                         else False for x in label]))
+
+    mask_cls = mask_cls.astype(bool)
+
+    all_feats = np.concatenate(all_feats)
+
+    all_feats, targets = (torch.from_numpy(x).to(device) for
+                          x in (all_feats, targets))
+    # centers = centers.cpu().numpy()
+
+    dist = pairwise_distance(all_feats, centers, batch_size=1024)
+    mindist, preds = torch.min(dist, dim=1)
+    targets = targets.cpu().numpy()
+    preds = preds.cpu().numpy()
+    all_acc, old_acc, new_acc = log_accs_from_preds(y_true=targets, y_pred=preds, mask=mask_cls, eval_funcs=args.eval_funcs,
+                                                    save_name='SS-K-Means Test ACC Unlabelled', print_output=True)
+    return all_acc, old_acc, new_acc
+
+    
+    
 
 if __name__ == "__main__":
 
@@ -175,3 +212,6 @@ if __name__ == "__main__":
     all_acc, old_acc, new_acc, kmeans = test_kmeans_semi_sup(train_loader, args, K=args.K)
     cluster_save_path = os.path.join(args.save_dir, 'ss_kmeans_cluster_centres.pt')
     torch.save(kmeans.cluster_centers_, cluster_save_path)
+    
+    centers = torch.load(cluster_save_path)
+    test_all_acc, test_old_acc, test_new_acc = test_kmeans(test_loader, centers, args)

@@ -1,1 +1,6 @@
 *.ipynb
+pretrained_models
+extracted_features_wo_finetune
+extracted_features
+.vscode
+__pycache__
