@@ -149,6 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--prop_train_labels', type=float, default=0.5)
     parser.add_argument('--eval_funcs', nargs='+', help='Which eval functions to use', default=['v1', 'v2'])
     parser.add_argument('--use_ssb_splits', type=str2bool, default=True)
+    parser.add_argument('--setting', type=str, default='default', help='dataset setting')
 
     # ----------------------
     # INIT
@@ -156,7 +157,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     cluster_accs = {}
     seed_torch(0)
-    args.save_dir = os.path.join(args.root_dir, f'{args.model_name}_{args.dataset_name}')
+    args.save_dir = os.path.join(args.root_dir, f'{args.model_name}_{args.dataset_name}_{args.setting}')
 
     args = get_class_splits(args)
 

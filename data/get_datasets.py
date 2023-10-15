@@ -113,6 +113,8 @@ def get_class_splits(args):
             # same as default
             args.train_classes = [0, 1, 2, 3, 4]
             args.unlabeled_classes = [5, 6, 7, 8, 9]
+        else:
+            raise NotImplementedError
 
     elif args.dataset_name == 'cifar100':
 

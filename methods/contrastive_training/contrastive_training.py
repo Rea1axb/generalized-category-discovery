@@ -344,6 +344,7 @@ if __name__ == "__main__":
     parser.add_argument('--warmup_model_dir', type=str, default=None)
     parser.add_argument('--model_name', type=str, default='vit_dino', help='Format is {model_name}_{pretrain}')
     parser.add_argument('--dataset_name', type=str, default='scars', help='options: cifar10, cifar100, scars')
+    parser.add_argument('--setting', type=str, default='default', help='dataset setting')
     parser.add_argument('--prop_train_labels', type=float, default=0.5)
     parser.add_argument('--use_ssb_splits', type=str2bool, default=False)
 

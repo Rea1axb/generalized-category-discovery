@@ -83,6 +83,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_best_model', type=str2bool, default=True)
     parser.add_argument('--model_name', type=str, default='vit_dino', help='Format is {model_name}_{pretrain}')
     parser.add_argument('--dataset', type=str, default='aircraft', help='options: cifar10, cifar100, scars')
+    parser.add_argument('--setting', type=str, default='default', help='dataset setting')
 
     # ----------------------
     # INIT
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     device = torch.device('cuda:0')
 
-    args.save_dir = os.path.join(args.root_dir, f'{args.model_name}_{args.dataset}')
+    args.save_dir = os.path.join(args.root_dir, f'{args.model_name}_{args.dataset}_{args.setting}')
     print(args)
 
     print('Loading model...')
