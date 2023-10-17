@@ -100,16 +100,16 @@ def get_class_splits(args):
         if args.setting == 'default':
             args.train_classes = range(5)
             args.unlabeled_classes = range(5, 10)
-        elif args.setting == 'animal_1.0_transportation_0.0_1_1':
+        elif args.setting == 'animal_6_transportation_0_0.5':
             args.train_classes = [2, 3, 4, 5, 6, 7]
             args.unlabeled_classes = [0, 1, 8, 9]
-        elif args.setting == 'animal_0.0_transportation_1.0_1_1':
+        elif args.setting == 'animal_0_transportation_4_0.5':
             args.train_classes = [0, 1, 8, 9]
             args.unlabeled_classes = [2, 3, 4, 5, 6, 7]
-        elif args.setting == 'animal_0.5_transportation_0.0_1_1':
+        elif args.setting == 'animal_0_transportation_2_0.5':
             args.train_classes = [0, 1]
             args.unlabeled_classes = [2, 3, 4, 5, 6, 7, 8, 9]
-        elif args.setting == 'animal_0.5_transportation_0.5_1_1':
+        elif args.setting == 'animal_3_transportation_2_0.5':
             # same as default
             args.train_classes = [0, 1, 2, 3, 4]
             args.unlabeled_classes = [5, 6, 7, 8, 9]

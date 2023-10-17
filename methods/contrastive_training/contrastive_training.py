@@ -237,31 +237,12 @@ def train(projection_head, model, train_loader, test_loader, unlabelled_train_lo
 
         print('Train Epoch: {} Avg Loss: {:.4f} | Seen Class Acc: {:.4f} '.format(epoch, loss_record.avg,
                                                                                   train_acc_record.avg))
-
-
-        with torch.no_grad():
-
-            print('Testing on unlabelled examples in the training data...')
-            all_acc, old_acc, new_acc = test_kmeans(model, unlabelled_train_loader,
-                                                    epoch=epoch, save_name='Train ACC Unlabelled',
-                                                    args=args)
-
-            print('Testing on disjoint test set...')
-            all_acc_test, old_acc_test, new_acc_test = test_kmeans(model, test_loader,
-                                                                   epoch=epoch, save_name='Test ACC',
-                                                                   args=args)
-
         # ----------------
         # LOG
         # ----------------
         args.writer.add_scalar('Loss', loss_record.avg, epoch)
         args.writer.add_scalar('Train Acc Labelled Data', train_acc_record.avg, epoch)
         args.writer.add_scalar('LR', get_mean_lr(optimizer), epoch)
-
-        print('Train Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc, old_acc,
-                                                                              new_acc))
-        print('Test Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc_test, old_acc_test,
-                                                                                new_acc_test))
 
         # Step schedule
         exp_lr_scheduler.step()
@@ -272,19 +253,38 @@ def train(projection_head, model, train_loader, test_loader, unlabelled_train_lo
         torch.save(projection_head.state_dict(), args.model_path[:-3] + '_proj_head.pt')
         print("projection head saved to {}.".format(args.model_path[:-3] + '_proj_head.pt'))
 
-        if old_acc_test > best_test_acc_lab:
+        if (epoch + 1) % args.eval_freq == 0:
+            with torch.no_grad():
 
-            print(f'Best ACC on old Classes on disjoint test set: {old_acc_test:.4f}...')
-            print('Best Train Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc, old_acc,
-                                                                                  new_acc))
+                print('Testing on unlabelled examples in the training data...')
+                all_acc, old_acc, new_acc = test_kmeans(model, unlabelled_train_loader,
+                                                        epoch=epoch, save_name='Train ACC Unlabelled',
+                                                        args=args)
 
-            torch.save(model.state_dict(), args.model_path[:-3] + f'_best.pt')
-            print("model saved to {}.".format(args.model_path[:-3] + f'_best.pt'))
+                print('Testing on disjoint test set...')
+                all_acc_test, old_acc_test, new_acc_test = test_kmeans(model, test_loader,
+                                                                    epoch=epoch, save_name='Test ACC',
+                                                                    args=args)
 
-            torch.save(projection_head.state_dict(), args.model_path[:-3] + f'_proj_head_best.pt')
-            print("projection head saved to {}.".format(args.model_path[:-3] + f'_proj_head_best.pt'))
 
-            best_test_acc_lab = old_acc_test
+            print('Train Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc, old_acc,
+                                                                                new_acc))
+            print('Test Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc_test, old_acc_test,
+                                                                                    new_acc_test))
+
+            if old_acc_test > best_test_acc_lab:
+
+                print(f'Best ACC on old Classes on disjoint test set: {old_acc_test:.4f}...')
+                print('Best Train Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc, old_acc,
+                                                                                    new_acc))
+
+                torch.save(model.state_dict(), args.model_path[:-3] + f'_best.pt')
+                print("model saved to {}.".format(args.model_path[:-3] + f'_best.pt'))
+
+                torch.save(projection_head.state_dict(), args.model_path[:-3] + f'_proj_head_best.pt')
+                print("projection head saved to {}.".format(args.model_path[:-3] + f'_proj_head_best.pt'))
+
+                best_test_acc_lab = old_acc_test
 
 
 def test_kmeans(model, test_loader,
@@ -364,6 +364,7 @@ if __name__ == "__main__":
     parser.add_argument('--sup_con_weight', type=float, default=0.5)
     parser.add_argument('--n_views', default=2, type=int)
     parser.add_argument('--contrast_unlabel_only', type=str2bool, default=False)
+    parser.add_argument('--eval_freq', type=int, default=10, help='eval frequency when training')
 
     # ----------------------
     # INIT
