@@ -394,8 +394,8 @@ if __name__ == "__main__":
         model.load_state_dict(state_dict)
 
         if args.warmup_model_dir is not None:
-            print(f'Loading weights from {args.warmup_model_dir}')
-            model.load_state_dict(torch.load(args.warmup_model_dir, map_location='cpu'))
+            print(f'Loading weights from {args.warmup_model_dir}/model.pt')
+            model.load_state_dict(torch.load(args.warmup_model_dir + '/model.pt', map_location='cpu'))
 
         model.to(device)
 
@@ -462,6 +462,9 @@ if __name__ == "__main__":
     # ----------------------
     projection_head = vits.__dict__['DINOHead'](in_dim=args.feat_dim,
                                out_dim=args.mlp_out_dim, nlayers=args.num_mlp_layers)
+    if args.warmup_model_dir is not None:
+        print(f'Loading weights from {args.warmup_model_dir}/model_proj_head.pt')
+        projection_head.load_state_dict(torch.load(args.warmup_model_dir + '/model_proj_head.pt', map_location='cpu'))
     projection_head.to(device)
 
     # ----------------------
