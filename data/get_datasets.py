@@ -113,6 +113,12 @@ def get_class_splits(args):
             # same as default
             args.train_classes = [0, 1, 2, 3, 4]
             args.unlabeled_classes = [5, 6, 7, 8, 9]
+        elif args.setting == 'animal_1_transportation_1_0.5':
+            args.train_classes = [0, 2]
+            args.unlabeled_classes = [1, 3, 4, 5, 6, 7, 8, 9]
+        elif args.setting == 'animal_2_transportation_0_0.5':
+            args.train_classes = [2, 3]
+            args.unlabeled_classes = [0, 1, 4, 5, 6, 7, 8, 9]
         else:
             raise NotImplementedError
 
