@@ -24,7 +24,7 @@ from copy import deepcopy
 
 from config import feature_extract_dir, dino_pretrain_path
 
-def extract_features_dino(model, loader, save_dir):
+def extract_features_dino(model, loader, save_dir, extract_block=False):
 
     model.to(device)
     model.eval()
@@ -34,20 +34,28 @@ def extract_features_dino(model, loader, save_dir):
 
             images, labels, idxs = batch[:3]
             images = images.to(device)
+            if extract_block:
+                features = model.get_intermediate_layers(images, n=12)
+                for layer, feat in enumerate(features):
+                    for f, t, uq in zip(feat, labels, idxs):
+                        t = t.item()
+                        uq = uq.item()
+                        save_path = os.path.join(save_dir, f'layer_{layer}', f'{t}', f'{uq}.npy')
+                        torch.save(f.detach().cpu().numpy(), save_path)
+            else:
+                features = model(images)         # CLS_Token for ViT, Average pooled vector for R50
 
-            features = model(images)         # CLS_Token for ViT, Average pooled vector for R50
+                # Save features
+                for f, t, uq in zip(features, labels, idxs):
 
-            # Save features
-            for f, t, uq in zip(features, labels, idxs):
+                    t = t.item()
+                    uq = uq.item()
 
-                t = t.item()
-                uq = uq.item()
-
-                save_path = os.path.join(save_dir, f'{t}', f'{uq}.npy')
-                torch.save(f.detach().cpu().numpy(), save_path)
+                    save_path = os.path.join(save_dir, f'{t}', f'{uq}.npy')
+                    torch.save(f.detach().cpu().numpy(), save_path)
 
 
-def extract_features_timm(model, loader, save_dir):
+def extract_features_timm(model, loader, save_dir, extract_block=False):
 
     model.to(device)
     model.eval()
@@ -84,6 +92,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_name', type=str, default='vit_dino', help='Format is {model_name}_{pretrain}')
     parser.add_argument('--dataset', type=str, default='aircraft', help='options: cifar10, cifar100, scars')
     parser.add_argument('--setting', type=str, default='default', help='dataset setting')
+    parser.add_argument('--extract_block', type=str2bool, default=False, help='extract feature from all blocks')
 
     # ----------------------
     # INIT
@@ -144,6 +153,8 @@ if __name__ == "__main__":
         print(f'Using weights from {args.warmup_model_dir} ...')
         state_dict = torch.load(args.warmup_model_dir)
         model.load_state_dict(state_dict)
+        if args.extract_block:
+            args.save_dir += '_block'
 
         print(f'Saving to {args.save_dir}')
 
@@ -226,16 +237,31 @@ if __name__ == "__main__":
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    for fold in ('train', 'test'):
+    if args.extract_block:
+        for layer in range(12):
+            for fold in ('train', 'test'):
+                fold_dir = os.path.join(args.save_dir, fold)
+                if not os.path.exists(fold_dir):
+                    os.mkdir(fold_dir)
+                layer_dir = os.path.join(fold_dir, f'layer_{layer}')
+                if not os.path.exists(layer_dir):
+                    os.mkdir(layer_dir)
 
-        fold_dir = os.path.join(args.save_dir, fold)
-        if not os.path.exists(fold_dir):
-            os.mkdir(fold_dir)
+                for t in targets:
+                    target_dir = os.path.join(layer_dir, f'{t}')
+                    if not os.path.exists(target_dir):
+                        os.mkdir(target_dir)
+    else:
+        for fold in ('train', 'test'):
 
-        for t in targets:
-            target_dir = os.path.join(fold_dir, f'{t}')
-            if not os.path.exists(target_dir):
-                os.mkdir(target_dir)
+            fold_dir = os.path.join(args.save_dir, fold)
+            if not os.path.exists(fold_dir):
+                os.mkdir(fold_dir)
+
+            for t in targets:
+                target_dir = os.path.join(fold_dir, f'{t}')
+                if not os.path.exists(target_dir):
+                    os.mkdir(target_dir)
 
     # ----------------------
     # EXTRACT FEATURES
@@ -243,11 +269,11 @@ if __name__ == "__main__":
     # Extract train features
     train_save_dir = os.path.join(args.save_dir, 'train')
     print('Extracting features from train split...')
-    extract_features_func(model=model, loader=train_loader, save_dir=train_save_dir)
+    extract_features_func(model=model, loader=train_loader, save_dir=train_save_dir, extract_block=args.extract_block)
 
     # Extract test features
     test_save_dir = os.path.join(args.save_dir, 'test')
     print('Extracting features from test split...')
-    extract_features_func(model=model, loader=test_loader, save_dir=test_save_dir)
+    extract_features_func(model=model, loader=test_loader, save_dir=test_save_dir, extract_block=args.extract_block)
 
     print('Done!')
