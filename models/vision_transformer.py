@@ -326,3 +326,20 @@ class VisionTransformerWithLinear(nn.Module):
         w = self.fc.weight.data.clone()
         w = torch.nn.functional.normalize(w, dim=1, p=2)
         self.fc.weight.copy_(w)
+
+class CoarseHead(nn.Module):
+    def __init__(self, proto_num=20, latent_dim=768, tau=0.1, init=False):
+        super(CoarseHead, self).__init__()
+        self.proto_num = proto_num
+        self.latent_dim = latent_dim
+        self.tau = tau
+        self.prototypes = nn.Parameter(torch.randn(self.proto_num, self.latent_dim), requires_grad=True) 
+
+        if init:
+            self.prototypes.data.uniform_(-1, 1).renorm_(2, 1, 1e-5).mul_(1e5)
+
+    def forward(self, x):
+        c = self.prototypes
+        c = torch.nn.functional.normalize(c, dim=1)
+        x = torch.nn.functional.normalize(x, dim=1)
+        p = torch.nn.functional.softmax(torch.mm(x, c.t()) / self.tau, dim=1)

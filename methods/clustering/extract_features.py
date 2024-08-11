@@ -12,7 +12,7 @@ from data.stanford_cars import CarsDataset
 from data.cifar import CustomCIFAR10, CustomCIFAR100, cifar_10_root, cifar_100_root
 from data.herbarium_19 import HerbariumDataset19, herbarium_dataroot
 from data.augmentations import get_transform
-from data.imagenet import get_imagenet_100_datasets
+from data.imagenet import get_imagenet_100_datasets, get_imagenet_datasets
 from data.data_utils import MergedDataset
 from data.cub import CustomCub2011, cub_root
 from data.fgvc_aircraft import FGVCAircraft, aircraft_root
@@ -201,7 +201,8 @@ if __name__ == "__main__":
         datasets['train_unlabelled'].target_transform = None
 
         train_dataset = MergedDataset(labelled_dataset=deepcopy(datasets['train_labelled']),
-                                      unlabelled_dataset=deepcopy(datasets['train_unlabelled']))
+                                      unlabelled_dataset=deepcopy(datasets['train_unlabelled']),
+                                      use_coarse_label=args.use_coarse_label)
 
         test_dataset = datasets['test']
         targets = list(set(test_dataset.targets))
@@ -215,10 +216,25 @@ if __name__ == "__main__":
 
     elif args.dataset == 'aircraft':
 
-        train_dataset = FGVCAircraft(root=aircraft_root, transform=val_transform, split='trainval')
-        test_dataset = FGVCAircraft(root=aircraft_root, transform=val_transform, split='test')
+        train_dataset = FGVCAircraft(root=aircraft_root, transform=val_transform, split='trainval', use_coarse_label=args.use_coarse_label)
+        test_dataset = FGVCAircraft(root=aircraft_root, transform=val_transform, split='test', use_coarse_label=args.use_coarse_label)
         targets = list(set([s[1] for s in train_dataset.samples]))
 
+    elif args.dataset == 'imagenet':
+
+        datasets = get_imagenet_datasets(train_transform=val_transform, test_transform=val_transform,
+                                             train_classes=range(50),
+                                             prop_train_labels=0.5)
+
+        datasets['train_labelled'].target_transform = None
+        datasets['train_unlabelled'].target_transform = None
+
+        train_dataset = MergedDataset(labelled_dataset=deepcopy(datasets['train_labelled']),
+                                      unlabelled_dataset=deepcopy(datasets['train_unlabelled'])
+                                      )
+
+        test_dataset = datasets['test']
+        targets = list(set(test_dataset.targets))
     else:
 
         raise NotImplementedError

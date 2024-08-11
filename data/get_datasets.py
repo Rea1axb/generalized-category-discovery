@@ -1,9 +1,9 @@
-from data.data_utils import MergedDataset
+from data.data_utils import MergedDataset, get_cifar100_coarse_labels_dict
 
 from data.cifar import get_cifar_10_datasets, get_cifar_100_datasets
 from data.herbarium_19 import get_herbarium_datasets
 from data.stanford_cars import get_scars_datasets
-from data.imagenet import get_imagenet_100_datasets
+from data.imagenet import get_imagenet_100_datasets, get_imagenet_datasets
 from data.cub import get_cub_datasets
 from data.fgvc_aircraft import get_aircraft_datasets
 
@@ -33,6 +33,7 @@ sub_sample_class_funcs = {
 get_dataset_funcs = {
     'cifar10': get_cifar_10_datasets,
     'cifar100': get_cifar_100_datasets,
+    'imagenet': get_imagenet_datasets,
     'imagenet_100': get_imagenet_100_datasets,
     'herbarium_19': get_herbarium_datasets,
     'cub': get_cub_datasets,
@@ -59,7 +60,7 @@ def get_datasets(dataset_name, train_transform, test_transform, args):
     datasets = get_dataset_f(train_transform=train_transform, test_transform=test_transform,
                             train_classes=args.train_classes,
                             prop_train_labels=args.prop_train_labels,
-                            split_train_val=False)
+                            split_train_val=False, use_coarse_label=args.use_coarse_label)
 
     # Set target transforms:
     target_transform_dict = {}
@@ -73,7 +74,8 @@ def get_datasets(dataset_name, train_transform, test_transform, args):
 
     # Train split (labelled and unlabelled classes) for training
     train_dataset = MergedDataset(labelled_dataset=deepcopy(datasets['train_labelled']),
-                                  unlabelled_dataset=deepcopy(datasets['train_unlabelled']))
+                                  unlabelled_dataset=deepcopy(datasets['train_unlabelled']),
+                                  use_coarse_label=args.use_coarse_label)
 
     test_dataset = datasets['test']
     unlabelled_train_examples_test = deepcopy(datasets['train_unlabelled'])
@@ -125,8 +127,26 @@ def get_class_splits(args):
     elif args.dataset_name == 'cifar100':
 
         args.image_size = 32
-        args.train_classes = range(80)
-        args.unlabeled_classes = range(80, 100)
+        cifar100_coarse_labels_dict = get_cifar100_coarse_labels_dict()
+        if args.setting == 'default':
+            args.train_classes = range(80)
+            args.unlabeled_classes = range(80, 100)
+        elif args.setting == 'completely_new':
+            args.train_classes = list()
+            args.unlabeled_classes = list()
+            for i in range(16):
+                args.train_classes.extend(cifar100_coarse_labels_dict[i])
+            for i in range(16, 20):
+                args.unlabeled_classes.extend(cifar100_coarse_labels_dict[i])
+        elif args.setting == 'completely_old':
+            args.train_classes = list()
+            args.unlabeled_classes = list()
+            for i in range(20):
+                for j in range(4):
+                    args.train_classes.append(cifar100_coarse_labels_dict[i][j])
+                args.unlabeled_classes.append(cifar100_coarse_labels_dict[i][4])
+        else:
+            raise NotImplementedError
 
     elif args.dataset_name == 'tinyimagenet':
 
@@ -144,6 +164,12 @@ def get_class_splits(args):
 
         args.train_classes = class_splits['Old']
         args.unlabeled_classes = class_splits['New']
+
+    elif args.dataset_name == 'imagenet':
+        
+        args.image_size = 224
+        args.train_classes = range(50)
+        args.unlabeled_classes = range(50, 100)
 
     elif args.dataset_name == 'imagenet_100':
 

@@ -3,25 +3,28 @@
 hostname
 nvidia-smi
 
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=0
 
 # python -m methods.clustering.extract_features \
 #   --dataset cifar10 \
-#   --setting 'animal_1.0_transportation_0.0_1_1' \
+#   --setting 'animal_2_transportation_0_0.5' \
 #   --use_best_model 'False' \
-#   --warmup_model_dir './metric_learn_gcd/log/(15.10.2023_|_32.528)/checkpoints/model.pt'
+#   --warmup_model_dir './metric_learn_gcd/log/(24.10.2023_|_23.769)/checkpoints/model.pt'
 
+
+# extract block features
 python -m methods.clustering.extract_features \
-  --dataset cifar10 \
+  --dataset imagenet \
   --setting 'default' \
   --use_best_model 'False' \
-  --warmup_model_dir './metric_learn_gcd/log/(15.10.2023_|_27.077)/checkpoints/model.pt'
+  --warmup_model_dir '/home/czq/workspace/GCD/generalized-category-discovery/metric_learn_gcd/log/(09.06.2024_|_22.289)/checkpoints/model.pt' \
+  --extract_block 'False'
 
-python -m methods.clustering.extract_features \
-  --dataset cifar100 \
-  --setting 'default' \
-  --use_best_model 'False' \
-  --warmup_model_dir './metric_learn_gcd/log/(16.10.2023_|_39.019)/checkpoints/model.pt'
+# python -m methods.clustering.extract_features \
+#   --dataset cifar100 \
+#   --setting 'completely_old' \
+#   --use_best_model 'False' \
+#   --warmup_model_dir './metric_learn_gcd/log/(29.10.2023_|_38.584)/checkpoints/model.pt'
 
 # python -m methods.clustering.extract_features --dataset cifar100 --use_best_model 'True' \
 #  --warmup_model_dir '/work/sagar/osr_novel_categories/metric_learn_gcd/log/(28.04.2022_|_27.530)/checkpoints/model.pt'

@@ -1,5 +1,6 @@
 from project_utils.cluster_utils import cluster_acc, np, linear_assignment
 from torch.utils.tensorboard import SummaryWriter
+from sklearn.metrics import confusion_matrix
 from typing import List
 
 
@@ -72,6 +73,24 @@ def split_cluster_acc_v2(y_true, y_pred, mask):
 
     return total_acc, old_acc, new_acc
 
+def get_confusion_matrix(y_true, y_pred):
+    y_true = y_true.astype(int)
+    assert y_pred.size == y_true.size
+    D = max(y_pred.max(), y_true.max()) + 1
+    w = np.zeros((D, D), dtype=int)
+    for i in range(y_pred.size):
+        w[y_pred[i], y_true[i]] += 1
+
+    ind = linear_assignment(w.max() - w)
+    ind = np.vstack(ind).T
+
+    ind_pred_map_true = {i: j for i, j in ind}
+    y_pred_map = np.zeros_like(y_pred)
+    for i in range(len(y_pred_map)):
+        y_pred_map[i] = ind_pred_map_true[y_pred[i]]
+    cm = confusion_matrix(y_true, y_pred_map)
+
+    return cm
 
 EVAL_FUNCS = {
     'v1': split_cluster_acc_v1,
@@ -79,7 +98,7 @@ EVAL_FUNCS = {
 }
 
 def log_accs_from_preds(y_true, y_pred, mask, eval_funcs: List[str], save_name: str, T: int=None, writer: SummaryWriter=None,
-                        print_output=False):
+                        print_output=False, return_confusion_matrix=False):
 
     """
     Given a list of evaluation functions to use (e.g ['v1', 'v2']) evaluate and log ACC results

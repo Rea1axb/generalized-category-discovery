@@ -7,3 +7,4 @@ __pycache__
 metric_learn_gcd
 *.npy
 outputs
+*.pt

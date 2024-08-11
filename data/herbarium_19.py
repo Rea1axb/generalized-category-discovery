@@ -9,12 +9,13 @@ from config import herbarium_dataroot
 
 class HerbariumDataset19(torchvision.datasets.ImageFolder):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, use_coarse_label=False, *args, **kwargs):
 
         # Process metadata json for training images into a DataFrame
         super().__init__(*args, **kwargs)
 
         self.uq_idxs = np.array(range(len(self)))
+        self.use_coarse_label = use_coarse_label
 
     def __getitem__(self, idx):
 
@@ -77,7 +78,7 @@ def get_train_val_indices(train_dataset, val_instances_per_class=5):
 
 
 def get_herbarium_datasets(train_transform, test_transform, train_classes=range(500), prop_train_labels=0.8,
-                            seed=0, split_train_val=False):
+                            seed=0, split_train_val=False, use_coarse_label=False):
 
     np.random.seed(seed)
 

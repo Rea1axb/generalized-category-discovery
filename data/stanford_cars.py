@@ -9,17 +9,21 @@ from torch.utils.data import Dataset
 
 from data.data_utils import subsample_instances
 
-car_root = "/work/sagar/datasets/stanford_car/cars_{}/"
-meta_default_path = "/work/sagar/datasets/stanford_car/devkit/cars_{}.mat"
+# car_root = "/work/sagar/datasets/stanford_car/cars_{}/"
+# meta_default_path = "/work/sagar/datasets/stanford_car/devkit/cars_{}.mat"
+car_root = "/home/czq/data/stanford_cars"
+meta_default_path = ""
 
 class CarsDataset(Dataset):
     """
         Cars Dataset
     """
-    def __init__(self, train=True, limit=0, data_dir=car_root, transform=None, metas=meta_default_path):
+    def __init__(self, train=True, limit=0, data_dir=car_root, transform=None, metas=meta_default_path, use_coarse_label=False):
 
-        data_dir = data_dir.format('train') if train else data_dir.format('test')
-        metas = metas.format('train_annos') if train else metas.format('test_annos_withlabels')
+        # data_dir = data_dir.format('train') if train else data_dir.format('test')
+        # metas = metas.format('train_annos') if train else metas.format('test_annos_withlabels')
+        metas = os.path.join(data_dir, 'devkit/cars_train_annos.mat') if train else os.path.join(data_dir, 'cars_test_annos_withlabels.mat')
+        data_dir = os.path.join(data_dir, 'cars_train/') if train else os.path.join(data_dir, 'cars_test/')
 
         self.loader = default_loader
         self.data_dir = data_dir
@@ -45,6 +49,7 @@ class CarsDataset(Dataset):
 
         self.uq_idxs = np.array(range(len(self)))
         self.target_transform = None
+        self.use_coarse_label = use_coarse_label
 
     def __getitem__(self, idx):
 
@@ -110,7 +115,7 @@ def get_train_val_indices(train_dataset, val_split=0.2):
 
 
 def get_scars_datasets(train_transform, test_transform, train_classes=range(160), prop_train_labels=0.8,
-                    split_train_val=False, seed=0):
+                    split_train_val=False, seed=0, use_coarse_label=False):
 
     np.random.seed(seed)
 

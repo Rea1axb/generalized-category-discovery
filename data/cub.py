@@ -17,7 +17,7 @@ class CustomCub2011(Dataset):
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, loader=default_loader, download=True):
+    def __init__(self, root, train=True, transform=None, target_transform=None, loader=default_loader, download=True, use_coarse_label=False):
 
         self.root = os.path.expanduser(root)
         self.transform = transform
@@ -35,6 +35,7 @@ class CustomCub2011(Dataset):
                                ' You can use download=True to download it')
 
         self.uq_idxs = np.array(range(len(self)))
+        self.use_coarse_label = use_coarse_label
 
     def _load_metadata(self):
         images = pd.read_csv(os.path.join(self.root, 'CUB_200_2011', 'images.txt'), sep=' ',
@@ -144,7 +145,7 @@ def get_train_val_indices(train_dataset, val_split=0.2):
 
 
 def get_cub_datasets(train_transform, test_transform, train_classes=range(160), prop_train_labels=0.8,
-                    split_train_val=False, seed=0):
+                    split_train_val=False, seed=0, use_coarse_label=False):
 
     np.random.seed(seed)
 

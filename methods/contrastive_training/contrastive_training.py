@@ -1,5 +1,6 @@
 import argparse
 import os
+import math
 
 from torch.utils.data import DataLoader
 import numpy as np
@@ -162,6 +163,144 @@ def info_nce_logits(features, args):
     logits = logits / args.temperature
     return logits, labels
 
+def nature_exp_decay(t, gamma=0.01):
+    return math.exp(-gamma * t)
+
+def train_with_coarse_label(projection_head, model, train_loader, test_loader, unlabelled_train_loader, args):
+
+    optimizer = SGD(list(projection_head.parameters()) + list(model.parameters()), lr=args.lr, momentum=args.momentum,
+                    weight_decay=args.weight_decay)
+
+    exp_lr_scheduler = lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=args.epochs,
+            eta_min=args.lr * 1e-3,
+        )
+
+    sup_con_crit = SupConLoss()
+    best_test_acc_lab = 0
+
+    for epoch in range(args.epochs):
+
+        loss_record = AverageMeter()
+        sup_con_loss_record = AverageMeter()
+        contrastive_loss_record = AverageMeter()
+        sup_con_coarse_loss_record = AverageMeter()
+        train_acc_record = AverageMeter()
+
+        projection_head.train()
+        model.train()
+        args.sup_coarse_con_weight *= nature_exp_decay(epoch)
+        print('sup_coarse_con_weight:', args.sup_coarse_con_weight)
+        for batch_idx, batch in enumerate(tqdm(train_loader)):
+
+            images, class_labels, coarse_labels, uq_idxs, mask_lab = batch
+            mask_lab = mask_lab[:, 0]
+
+            class_labels, coarse_labels, mask_lab = class_labels.to(device), coarse_labels.to(device), mask_lab.to(device).bool()
+            images = torch.cat(images, dim=0).to(device)
+
+            # Extract features with base model
+            features = model(images)
+
+            # Pass features through projection head
+            features = projection_head(features)
+
+            # L2-normalize features
+            features = torch.nn.functional.normalize(features, dim=-1)
+
+            # Choose which instances to run the contrastive loss on
+            if args.contrast_unlabel_only:
+                # Contrastive loss only on unlabelled instances
+                f1, f2 = [f[~mask_lab] for f in features.chunk(2)]
+                con_feats = torch.cat([f1, f2], dim=0)
+            else:
+                # Contrastive loss for all examples
+                con_feats = features
+
+            contrastive_logits, contrastive_labels = info_nce_logits(features=con_feats, args=args)
+            contrastive_loss = torch.nn.CrossEntropyLoss()(contrastive_logits, contrastive_labels)
+
+            # Supervised contrastive loss
+            f1, f2 = [f[mask_lab] for f in features.chunk(2)]
+            sup_con_feats = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
+            sup_con_labels = class_labels[mask_lab]
+            con_feats = torch.cat([f.unsqueeze(1) for f in features.chunk(2)], dim=1)
+
+            sup_con_loss = sup_con_crit(sup_con_feats, labels=sup_con_labels)
+            sup_con_coarse_loss = sup_con_crit(con_feats, coarse_labels)
+
+            # Total loss
+            loss = (1 - args.sup_con_weight) * contrastive_loss + args.sup_con_weight * ((1 - args.sup_coarse_con_weight) * sup_con_loss + args.sup_coarse_con_weight * sup_con_coarse_loss)
+
+            # Train acc
+            _, pred = contrastive_logits.max(1)
+            acc = (pred == contrastive_labels).float().mean().item()
+            train_acc_record.update(acc, pred.size(0))
+
+            loss_record.update(loss.item(), class_labels.size(0))
+            sup_con_loss_record.update(sup_con_loss.item(), class_labels.size(0))
+            contrastive_loss_record.update(contrastive_loss.item(), class_labels.size(0))
+            sup_con_coarse_loss_record.update(sup_con_coarse_loss.item(), class_labels.size(0))
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+
+        print('Train Epoch: {} Avg Loss: {:.4f} | Seen Class Acc: {:.4f} '.format(epoch, loss_record.avg,
+                                                                                  train_acc_record.avg))
+        # ----------------
+        # LOG
+        # ----------------
+        args.writer.add_scalar('Loss', loss_record.avg, epoch)
+        args.writer.add_scalar('Train Acc Labelled Data', train_acc_record.avg, epoch)
+        args.writer.add_scalar('LR', get_mean_lr(optimizer), epoch)
+        args.writer.add_scalar('sup con loss', sup_con_loss_record.avg, epoch)
+        args.writer.add_scalar('contrastive loss', contrastive_loss_record.avg, epoch)
+        args.writer.add_scalar('sup con coarse loss', sup_con_coarse_loss_record.avg, epoch)
+
+        # Step schedule
+        exp_lr_scheduler.step()
+
+        torch.save(model.state_dict(), args.model_path)
+        print("model saved to {}.".format(args.model_path))
+
+        torch.save(projection_head.state_dict(), args.model_path[:-3] + '_proj_head.pt')
+        print("projection head saved to {}.".format(args.model_path[:-3] + '_proj_head.pt'))
+
+        if (epoch + 1) % args.eval_freq == 0:
+            with torch.no_grad():
+
+                print('Testing on unlabelled examples in the training data...')
+                all_acc, old_acc, new_acc = test_kmeans(model, unlabelled_train_loader,
+                                                        epoch=epoch, save_name='Train ACC Unlabelled',
+                                                        args=args)
+
+                print('Testing on disjoint test set...')
+                all_acc_test, old_acc_test, new_acc_test = test_kmeans(model, test_loader,
+                                                                    epoch=epoch, save_name='Test ACC',
+                                                                    args=args)
+
+
+            print('Train Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc, old_acc,
+                                                                                new_acc))
+            print('Test Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc_test, old_acc_test,
+                                                                                    new_acc_test))
+
+            if old_acc_test > best_test_acc_lab:
+
+                print(f'Best ACC on old Classes on disjoint test set: {old_acc_test:.4f}...')
+                print('Best Train Accuracies: All {:.4f} | Old {:.4f} | New {:.4f}'.format(all_acc, old_acc,
+                                                                                    new_acc))
+
+                torch.save(model.state_dict(), args.model_path[:-3] + f'_best.pt')
+                print("model saved to {}.".format(args.model_path[:-3] + f'_best.pt'))
+
+                torch.save(projection_head.state_dict(), args.model_path[:-3] + f'_proj_head_best.pt')
+                print("projection head saved to {}.".format(args.model_path[:-3] + f'_proj_head_best.pt'))
+
+                best_test_acc_lab = old_acc_test
+
 
 def train(projection_head, model, train_loader, test_loader, unlabelled_train_loader, args):
 
@@ -299,8 +438,14 @@ def test_kmeans(model, test_loader,
 
     print('Collating features...')
     # First extract all features
-    for batch_idx, (images, label, _) in enumerate(tqdm(test_loader)):
-
+    for batch_idx, data in enumerate(tqdm(test_loader)):
+        if len(data) == 3:
+            (images, label, _) = data
+        elif len(data) == 4:
+            (images, label, coarse_label, _) = data
+        else:
+            raise ValueError("DataLoader structure not supported")
+        
         images = images.cuda()
 
         # Pass features through base model and then additional learnable transform (linear layer)
@@ -312,7 +457,9 @@ def test_kmeans(model, test_loader,
         targets = np.append(targets, label.cpu().numpy())
         mask = np.append(mask, np.array([True if x.item() in range(len(args.train_classes))
                                          else False for x in label]))
-
+    # print(len(all_feats))
+    # print(targets.shape)
+    # print(mask.shape)
     # -----------------------
     # K-MEANS
     # -----------------------
@@ -365,6 +512,8 @@ if __name__ == "__main__":
     parser.add_argument('--n_views', default=2, type=int)
     parser.add_argument('--contrast_unlabel_only', type=str2bool, default=False)
     parser.add_argument('--eval_freq', type=int, default=10, help='eval frequency when training')
+    parser.add_argument('--use_coarse_label', type=str2bool, default=False)
+    parser.add_argument('--sup_coarse_con_weight', type=float, default=0.5)
 
     # ----------------------
     # INIT
@@ -470,4 +619,7 @@ if __name__ == "__main__":
     # ----------------------
     # TRAIN
     # ----------------------
-    train(projection_head, model, train_loader, test_loader_labelled, test_loader_unlabelled, args)
+    if args.use_coarse_label:
+        train_with_coarse_label(projection_head, model, train_loader, test_loader_labelled, test_loader_unlabelled, args)
+    else:
+        train(projection_head, model, train_loader, test_loader_labelled, test_loader_unlabelled, args)

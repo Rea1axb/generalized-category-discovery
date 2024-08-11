@@ -37,7 +37,12 @@ class FeatureVectorDataset(Dataset):
         if isinstance(self.base_dataset, MergedDataset):
 
             # Get meta info for this instance
-            _, label, uq_idx, mask_lab = self.base_dataset[item]
+            data = self.base_dataset[item]
+            if self.base_dataset.use_coarse_label:
+                (_, label, coarse_label, uq_idx, mask_lab) = data
+            else:
+                (_, label, uq_idx, mask_lab) = data
+            # _, label, uq_idx, mask_lab = self.base_dataset[item]
 
             # Load feature vector
             feat_path = os.path.join(self.feature_root, f'{label}', f'{uq_idx}.npy')
@@ -51,7 +56,11 @@ class FeatureVectorDataset(Dataset):
         else:
 
             # Get meta info for this instance
-            _, label, uq_idx = self.base_dataset[item]
+            data = self.base_dataset[item]
+            if self.base_dataset.use_coarse_label:
+                (_, label, coarse_label, uq_idx) = data
+            else:
+                (_, label, uq_idx) = data
 
             # Load feature vector
             feat_path = os.path.join(self.feature_root, f'{label}', f'{uq_idx}.npy')
