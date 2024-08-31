@@ -3,7 +3,7 @@ from data.data_utils import MergedDataset, get_cifar100_coarse_labels_dict
 from data.cifar import get_cifar_10_datasets, get_cifar_100_datasets
 from data.herbarium_19 import get_herbarium_datasets
 from data.stanford_cars import get_scars_datasets
-from data.imagenet import get_imagenet_100_datasets, get_imagenet_datasets
+from data.imagenet import get_imagenet_100_datasets, get_imagenet_datasets, get_imagenet_200_datasets
 from data.cub import get_cub_datasets
 from data.fgvc_aircraft import get_aircraft_datasets
 
@@ -34,6 +34,7 @@ get_dataset_funcs = {
     'cifar10': get_cifar_10_datasets,
     'cifar100': get_cifar_100_datasets,
     'imagenet': get_imagenet_datasets,
+    'imagenet_200': get_imagenet_200_datasets,
     'imagenet_100': get_imagenet_100_datasets,
     'herbarium_19': get_herbarium_datasets,
     'cub': get_cub_datasets,
@@ -170,6 +171,12 @@ def get_class_splits(args):
         args.image_size = 224
         args.train_classes = range(50)
         args.unlabeled_classes = range(50, 100)
+
+    elif args.dataset_name == 'imagenet_200':
+
+        args.image_size = 224
+        args.train_classes = range(100)
+        args.unlabeled_classes = range(100, 200)
 
     elif args.dataset_name == 'imagenet_100':
 

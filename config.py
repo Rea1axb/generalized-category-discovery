@@ -1,8 +1,8 @@
 # -----------------
 # DATASET ROOTS
 # -----------------
-cifar_10_root = '/home/czq/data/CIFAR10'
-cifar_100_root = '/home/czq/data/CIFAR100'
+cifar_10_root = '../../../CIFAR10'
+cifar_100_root = '../../../CIFAR100'
 # cub_root = '/work/sagar/datasets/CUB'
 # aircraft_root = '/work/khan/datasets/aircraft/fgvc-aircraft-2013b'
 # herbarium_dataroot = '/work/sagar/datasets/herbarium_19/'
@@ -14,14 +14,15 @@ car_root = '../../../data/stanford_cars'
 herbarium_dataroot = '../../../data/herbarium_19'
 # imagenet_root = '../../../data/ImageNet'
 imagenet_root = '../../../data/imagenet100_small'
+imagenet_200_root = '../../../data/imagenet200_small'
 
 # OSR Split dir
 # osr_split_dir = '/users/sagar/kai_collab/osr_novel_categories/data/ssb_splits'
-osr_split_dir = '/home/czq/workspace/GCD/generalized-category-discovery/data/ssb_splits'
+osr_split_dir = './data/ssb_splits'
 
 # -----------------
 # OTHER PATHS
 # -----------------
 dino_pretrain_path = './pretrained_models/dino_vitbase16_pretrain.pth'
 feature_extract_dir = './extracted_features'     # Extract features to this directory
-exp_root = '/home/czq/workspace/GCD/generalized-category-discovery/'          # All logs and checkpoints will be saved here
+exp_root = './'          # All logs and checkpoints will be saved here

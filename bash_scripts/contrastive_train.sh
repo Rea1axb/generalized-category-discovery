@@ -6,14 +6,14 @@ nvidia-smi
 export CUDA_VISIBLE_DEVICES=0
 
 # Get unique log file,
-SAVE_DIR=/home/czq/workspace/GCD/generalized-category-discovery/outputs/
+SAVE_DIR=./outputs/
 
 EXP_NUM=$(ls ${SAVE_DIR} | wc -l)
 EXP_NUM=$((${EXP_NUM}+1))
 echo $EXP_NUM
 
 python -m methods.contrastive_training.contrastive_training \
-            --dataset_name 'imagenet' \
+            --dataset_name 'imagenet_200' \
             --setting 'default'\
             --batch_size 128 \
             --grad_from_block 11 \

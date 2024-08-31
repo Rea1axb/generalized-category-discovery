@@ -12,7 +12,7 @@ from data.stanford_cars import CarsDataset
 from data.cifar import CustomCIFAR10, CustomCIFAR100, cifar_10_root, cifar_100_root
 from data.herbarium_19 import HerbariumDataset19, herbarium_dataroot
 from data.augmentations import get_transform
-from data.imagenet import get_imagenet_100_datasets, get_imagenet_datasets
+from data.imagenet import get_imagenet_100_datasets, get_imagenet_datasets, get_imagenet_200_datasets
 from data.data_utils import MergedDataset
 from data.cub import CustomCub2011, cub_root
 from data.fgvc_aircraft import FGVCAircraft, aircraft_root
@@ -235,6 +235,21 @@ if __name__ == "__main__":
 
         test_dataset = datasets['test']
         targets = list(set(test_dataset.targets))
+
+    elif args.dataset == 'imagenet200':
+        datasets = get_imagenet_200_datasets(train_transform=val_transform, test_transform=val_transform,
+                                             train_classes=range(100),
+                                             prop_train_labels=0.5)
+        datasets['train_labelled'].target_transform = None
+        datasets['train_unlabelled'].target_transform = None
+
+        train_dataset = MergedDataset(labelled_dataset=deepcopy(datasets['train_labelled']),
+                                      unlabelled_dataset=deepcopy(datasets['train_unlabelled'])
+                                      )
+
+        test_dataset = datasets['test']
+        targets = list(set(test_dataset.targets))
+
     else:
 
         raise NotImplementedError

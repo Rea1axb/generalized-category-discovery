@@ -14,10 +14,10 @@ export CUDA_VISIBLE_DEVICES=0
 
 # extract block features
 python -m methods.clustering.extract_features \
-  --dataset imagenet \
+  --dataset imagenet_200 \
   --setting 'default' \
   --use_best_model 'False' \
-  --warmup_model_dir '/home/czq/workspace/GCD/generalized-category-discovery/metric_learn_gcd/log/(09.06.2024_|_22.289)/checkpoints/model.pt' \
+  --warmup_model_dir '/data/workspace/GCD/generalized-category-discovery/metric_learn_gcd/log/(27.08.2024_|_30.376)/checkpoints/model.pt' \
   --extract_block 'False'
 
 # python -m methods.clustering.extract_features \

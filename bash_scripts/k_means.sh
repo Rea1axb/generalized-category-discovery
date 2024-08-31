@@ -3,10 +3,10 @@
 hostname
 nvidia-smi
 
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=0
 
 # Get unique log file
-SAVE_DIR=/home/czq/workspace/GCD/generalized-category-discovery/outputs/
+SAVE_DIR=/data/workspace/GCD/generalized-category-discovery/outputs
 
 
 
@@ -14,13 +14,13 @@ SAVE_DIR=/home/czq/workspace/GCD/generalized-category-discovery/outputs/
 #  --max_kmeans_iter 200 --k_means_init 100 \
 #  > ${SAVE_DIR}logfile_${EXP_NUM}.out
 
-for s in {5..5}
+for s in {1..5}
 do
 EXP_NUM=$(ls ${SAVE_DIR} | wc -l)
 EXP_NUM=$((${EXP_NUM}+1))
 echo $EXP_NUM
-python -m methods.clustering.k_means --dataset 'imagenet' --setting 'default' --semi_sup 'True' \
- --use_best_model 'False' --max_kmeans_iter 200 --k_means_init 100 --warmup_model_exp_id '(09.06.2024_|_22.289)' --use_coarse_label 'False' --seed $s \
+python -m methods.clustering.k_means --dataset 'imagenet_200' --setting 'default' --semi_sup 'True' \
+ --use_best_model 'False' --max_kmeans_iter 200 --k_means_init 100 --warmup_model_exp_id '(27.08.2024_|_30.376)' --use_coarse_label 'False' --seed $s \
  > ${SAVE_DIR}logfile_${EXP_NUM}.out
 done
 
