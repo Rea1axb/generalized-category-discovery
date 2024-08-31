@@ -127,6 +127,8 @@ def test_kmeans(test_loader, centers, args):
         'preds': preds,
         'targets': targets
     }
+    if not os.path.exists('./preds_result'):
+        os.makedirs('./preds_result')
     save_path = os.path.join('./preds_result', f'{args.dataset_name}_{args.seed}.pt')
     torch.save(save_dict, save_path)
 

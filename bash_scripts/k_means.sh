@@ -6,7 +6,7 @@ nvidia-smi
 export CUDA_VISIBLE_DEVICES=0
 
 # Get unique log file
-SAVE_DIR=/data/workspace/GCD/generalized-category-discovery/outputs
+SAVE_DIR=./outputs/
 
 
 

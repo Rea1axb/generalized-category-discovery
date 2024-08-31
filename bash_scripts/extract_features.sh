@@ -17,7 +17,7 @@ python -m methods.clustering.extract_features \
   --dataset imagenet_200 \
   --setting 'default' \
   --use_best_model 'False' \
-  --warmup_model_dir '/data/workspace/GCD/generalized-category-discovery/metric_learn_gcd/log/(27.08.2024_|_30.376)/checkpoints/model.pt' \
+  --warmup_model_dir './metric_learn_gcd/log/(27.08.2024_|_30.376)/checkpoints/model.pt' \
   --extract_block 'False'
 
 # python -m methods.clustering.extract_features \
